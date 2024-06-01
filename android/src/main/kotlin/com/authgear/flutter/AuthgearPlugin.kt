@@ -370,14 +370,24 @@ class AuthgearPlugin: FlutterPlugin, ActivityAware, MethodCallHandler, PluginReg
   private fun getSharePreferences(): SharedPreferences {
     val context = pluginBinding?.applicationContext!!
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      val masterKey = MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
-      return EncryptedSharedPreferences.create(
-        context,
-        "authgear_encrypted_shared_preferences",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-      )
+      fun handle(): SharedPreferences {
+        val masterKey = MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
+        return EncryptedSharedPreferences.create(
+          context,
+          "authgear_encrypted_shared_preferences",
+          masterKey,
+          EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+          EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+      }
+
+      try {
+        return handle()
+      } catch (e: Exception) {
+        context.getSharedPreferences("authgear_encrypted_shared_preferences", Context.MODE_PRIVATE).edit().clear().apply()
+
+        return handle()
+      }
     }
     return context.getSharedPreferences("authgear_shared_preferences", Context.MODE_PRIVATE)
   }
